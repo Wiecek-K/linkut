@@ -9,81 +9,80 @@ import {
   Param,
   Patch,
   Post,
-  Query,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { User } from '@prisma/client';
+import { LinksService } from './links.service';
+import { Link, Prisma } from '@prisma/client';
 
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+@Controller('links')
+export class LinksController {
+  constructor(private readonly linksService: LinksService) {}
 
-  @Get() //   GET /users or /users?min-links=value
-  async getAllUsers(@Query('minLinks') minLinks?: number) {
+  @Get() // GET   /links
+  async getAllLinks() {
     try {
-      return await this.usersService.findAll({ minLinks });
+      return await this.linksService.findAll();
     } catch (error) {
       throw new HttpException(
-        'Error fetching users',
+        'Error fetching links',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Get(':id') //  GET /users/:id
-  async getUserById(@Param('id') id: string) {
+  @Get(':id') //  GET /links/:id
+  async getLinkById(@Param('id') id: string) {
     try {
-      return await this.usersService.findUnique({ id });
+      return await this.linksService.findOne(id);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new HttpException(error.message, HttpStatus.NOT_FOUND);
       } else {
         throw new HttpException(
-          'Error fetching user',
+          'Error fetching link',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
     }
   }
 
-  @Post() //POST  /users
-  async createUser(@Body() userDto: User) {
+  @Post() //POST  /links
+  async createLink(@Body() linkDto: Prisma.LinkCreateInput) {
     try {
-      return await this.usersService.create(userDto);
+      return await this.linksService.create(linkDto);
     } catch (error) {
       throw new HttpException(
-        'Error creating user',
+        'Error creating link',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  @Patch(':id') //  PATCH /users/:id
-  async updateUser(@Param('id') id: string, @Body() userDto: User) {
+  @Patch(':id') //  PATCH /links/:id
+  async updateLink(@Param('id') id: string, @Body() linkDto: Link) {
     try {
-      return await this.usersService.update(id, userDto);
+      return await this.linksService.update(id, linkDto);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new HttpException(error.message, HttpStatus.NOT_FOUND);
       } else {
         throw new HttpException(
-          'Error fetching user',
+          'Error fetching link',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
     }
   }
 
-  @Delete(':id') //  DELETE /users/:id
-  async deleteUser(@Param('id') id: string) {
+  @Delete(':id') //  DELETE /links/:id
+  async deleteLink(@Param('id') id: string) {
     try {
-      return await this.usersService.delete(id);
+      return await this.linksService.delete(id);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new HttpException(error.message, HttpStatus.NOT_FOUND);
       } else {
         throw new HttpException(
-          'Error fetching user',
+          'Error fetching link',
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
