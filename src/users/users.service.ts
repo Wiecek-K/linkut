@@ -14,6 +14,12 @@ export class UsersService {
     });
   }
 
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
   async findAll(params: { minLinks?: number }): Promise<User[] | null> {
     const { minLinks } = params;
 

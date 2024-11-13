@@ -7,9 +7,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { LinksController } from './links/links.controller';
 import { LinksModule } from './links/links.module';
 import { LinksService } from './links/links.service';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, LinksModule],
+  imports: [UsersModule, PrismaModule, LinksModule, AuthModule],
   controllers: [AppController, LinksController],
   providers: [AppService, PrismaService, LinksService],
 })
