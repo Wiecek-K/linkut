@@ -5,7 +5,6 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -19,73 +18,38 @@ export class LinksController {
 
   @Get() // GET   /links
   async getAllLinks() {
-    try {
-      return await this.linksService.findAll();
-    } catch (error) {
-      throw new HttpException(
-        'Error fetching links',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return await this.linksService.findAll();
   }
 
   @Get(':id') //  GET /links/:id
   async getLinkById(@Param('id') id: string) {
-    try {
-      return await this.linksService.findOne(id);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching link',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const link = await this.linksService.findOne(id);
+    if (!link) {
+      throw new HttpException('Nie znaleziono linku', HttpStatus.NOT_FOUND);
     }
+    return link;
   }
 
   @Post() //POST  /links
   async createLink(@Body() linkDto: Prisma.LinkCreateInput) {
-    try {
-      return await this.linksService.create(linkDto);
-    } catch (error) {
-      throw new HttpException(
-        'Error creating link',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return await this.linksService.create(linkDto);
   }
 
   @Patch(':id') //  PATCH /links/:id
   async updateLink(@Param('id') id: string, @Body() linkDto: Link) {
-    try {
-      return await this.linksService.update(id, linkDto);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching link',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const updatedLink = await this.linksService.update(id, linkDto);
+    if (!updatedLink) {
+      throw new HttpException('Nie znaleziono linku', HttpStatus.NOT_FOUND);
     }
+    return updatedLink;
   }
 
   @Delete(':id') //  DELETE /links/:id
   async deleteLink(@Param('id') id: string) {
-    try {
-      return await this.linksService.delete(id);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching link',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const deletedLink = await this.linksService.delete(id);
+    if (!deletedLink) {
+      throw new HttpException('Nie znaleziono linku', HttpStatus.NOT_FOUND);
     }
+    return deletedLink;
   }
 }

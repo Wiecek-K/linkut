@@ -20,73 +20,48 @@ export class UsersController {
 
   @Get() //   GET /users or /users?min-links=value
   async getAllUsers(@Query('minLinks') minLinks?: number) {
-    try {
-      return await this.usersService.findAll({ minLinks });
-    } catch (error) {
-      throw new HttpException(
-        'Error fetching users',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return await this.usersService.findAll({ minLinks });
   }
 
   @Get(':id') //  GET /users/:id
   async getUserById(@Param('id') id: string) {
-    try {
-      return await this.usersService.findUnique({ id });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching user',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const user = await this.usersService.findUnique({ id });
+
+    if (!user) {
+      throw new HttpException(
+        'Nie znaleziono użytkownika',
+        HttpStatus.NOT_FOUND,
+      );
     }
+    return user;
   }
 
   @Post() //POST  /users
   async createUser(@Body() userDto: User) {
-    try {
-      return await this.usersService.create(userDto);
-    } catch (error) {
-      throw new HttpException(
-        'Error creating user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return await this.usersService.create(userDto);
   }
 
   @Patch(':id') //  PATCH /users/:id
   async updateUser(@Param('id') id: string, @Body() userDto: User) {
-    try {
-      return await this.usersService.update(id, userDto);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching user',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const updatedUser = await this.usersService.update(id, userDto);
+    if (!updatedUser) {
+      throw new HttpException(
+        'Nie znaleziono użytkownika',
+        HttpStatus.NOT_FOUND,
+      );
     }
+    return updatedUser;
   }
 
   @Delete(':id') //  DELETE /users/:id
   async deleteUser(@Param('id') id: string) {
-    try {
-      return await this.usersService.delete(id);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      } else {
-        throw new HttpException(
-          'Error fetching user',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const deletedUser = await this.usersService.delete(id);
+    if (!deletedUser) {
+      throw new HttpException(
+        'Nie znaleziono użytkownika',
+        HttpStatus.NOT_FOUND,
+      );
     }
+    return deletedUser;
   }
 }

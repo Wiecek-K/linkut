@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
 
@@ -9,58 +14,112 @@ export class UsersService {
   async findUnique(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
   ): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: userWhereUniqueInput,
-    });
+    try {
+      return await this.prisma.user.findUnique({
+        where: userWhereUniqueInput,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      } else {
+        throw new HttpException(
+          'Error fetching user',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    try {
+      return await this.prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Error fetching user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async findAll(params: { minLinks?: number }): Promise<User[] | null> {
-    const { minLinks } = params;
+    try {
+      const { minLinks } = params;
 
-    if (minLinks !== undefined) {
-      const users = await this.prisma.user.findMany({
-        where: {
-          links: {
-            some: {},
-          },
-        },
-        include: {
-          links: {
-            select: {
-              id: true, // We are selecting only id to limit the amount of data.
+      if (minLinks !== undefined) {
+        const users = await this.prisma.user.findMany({
+          where: {
+            links: {
+              some: {},
             },
           },
-        },
-      });
+          include: {
+            links: {
+              select: {
+                id: true, // We are selecting only id to limit the amount of data.
+              },
+            },
+          },
+        });
 
-      const filteredUsers = users.filter(
-        (user) => user.links.length >= minLinks,
+        const filteredUsers = users.filter(
+          (user) => user.links.length >= minLinks,
+        );
+
+        return filteredUsers;
+      }
+
+      return await this.prisma.user.findMany();
+    } catch (error) {
+      throw new HttpException(
+        'Error fetching users',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
-
-      return filteredUsers;
     }
-
-    return await this.prisma.user.findMany();
   }
 
   async create(data: Prisma.UserCreateInput): Promise<User | null> {
-    return this.prisma.user.create({ data });
+    try {
+      return await this.prisma.user.create({ data });
+    } catch (error) {
+      throw new HttpException(
+        'Error creating user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async update(
     id: User['id'],
     data: Prisma.UserUpdateInput,
   ): Promise<User | null> {
-    return this.prisma.user.update({ where: { id }, data });
+    try {
+      return await this.prisma.user.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      } else {
+        throw new HttpException(
+          'Error fetching user',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
   }
 
   async delete(id: User['id']): Promise<User | null> {
-    return this.prisma.user.delete({ where: { id } });
+    try {
+      return await this.prisma.user.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      } else {
+        throw new HttpException(
+          'Error fetching user',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
   }
 }
