@@ -8,9 +8,12 @@ import {
   Param,
   Patch,
   Post,
+  ValidationPipe,
 } from '@nestjs/common';
 import { LinksService } from './links.service';
 import { Link, Prisma } from '@prisma/client';
+import { CreateLinkDto } from './dto/create-link.dto';
+import { UpdateLinkDto } from './dto/update-link.dto';
 
 @Controller('links')
 export class LinksController {
@@ -31,13 +34,16 @@ export class LinksController {
   }
 
   @Post() //POST  /links
-  async createLink(@Body() linkDto: Prisma.LinkCreateInput) {
-    return await this.linksService.create(linkDto);
+  async createLink(@Body(ValidationPipe) createLinkDto: CreateLinkDto) {
+    return await this.linksService.create(createLinkDto);
   }
 
   @Patch(':id') //  PATCH /links/:id
-  async updateLink(@Param('id') id: string, @Body() linkDto: Link) {
-    const updatedLink = await this.linksService.update(id, linkDto);
+  async updateLink(
+    @Param('id') id: string,
+    @Body(ValidationPipe) updateLinkDto: UpdateLinkDto,
+  ) {
+    const updatedLink = await this.linksService.update(id, updateLinkDto);
     if (!updatedLink) {
       throw new HttpException('Nie znaleziono linku', HttpStatus.NOT_FOUND);
     }
