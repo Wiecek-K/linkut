@@ -5,14 +5,15 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -37,13 +38,17 @@ export class UsersController {
   }
 
   @Post() //POST  /users
-  async createUser(@Body() userDto: User) {
-    return await this.usersService.create(userDto);
+  async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+    return await this.usersService.create(createUserDto);
   }
 
   @Patch(':id') //  PATCH /users/:id
-  async updateUser(@Param('id') id: string, @Body() userDto: User) {
-    const updatedUser = await this.usersService.update(id, userDto);
+  async updateUser(
+    @Param('id') id: string,
+    @Body(ValidationPipe) updateUserDto: UpdateUserDto,
+  ) {
+    const updatedUser = await this.usersService.update(id, updateUserDto);
+
     if (!updatedUser) {
       throw new HttpException(
         'Nie znaleziono użytkownika',

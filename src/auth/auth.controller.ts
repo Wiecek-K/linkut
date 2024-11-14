@@ -18,6 +18,6 @@ export class AuthController {
       httpOnly: true,
     });
 
-    return res.send({ message: `Login successful  ${access_token}` });
+    return res.send({ message: `Login successful` });
   }
 }

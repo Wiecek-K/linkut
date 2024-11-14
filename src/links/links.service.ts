@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Link, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateLinkDto } from './dto/create-link.dto';
+import { UpdateLinkDto } from './dto/update-link.dto';
 
 @Injectable()
 export class LinksService {
@@ -28,9 +30,19 @@ export class LinksService {
     }
   }
 
-  async create(data: Prisma.LinkCreateInput): Promise<Link | null> {
+  async create(createLinkDto: CreateLinkDto): Promise<Link | null> {
     try {
-      return await this.prisma.link.create({ data });
+      const user = await this.prisma.user.findUnique({
+        where: { id: createLinkDto.userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          `User with id ${createLinkDto.userId} not found`,
+        );
+      }
+
+      return await this.prisma.link.create({ data: createLinkDto });
     } catch (error) {
       throw new Error('Error creating link');
     }
@@ -38,10 +50,13 @@ export class LinksService {
 
   async update(
     id: Link['id'],
-    data: Prisma.LinkUpdateInput,
+    updateLinkDto: UpdateLinkDto,
   ): Promise<Link | null> {
     try {
-      return await this.prisma.link.update({ where: { id }, data });
+      return await this.prisma.link.update({
+        where: { id },
+        data: updateLinkDto,
+      });
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(`Link with ID "${id}" not found.`);

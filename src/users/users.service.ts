@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -79,9 +81,9 @@ export class UsersService {
     }
   }
 
-  async create(data: Prisma.UserCreateInput): Promise<User | null> {
+  async create(createUserDto: CreateUserDto): Promise<User | null> {
     try {
-      return await this.prisma.user.create({ data });
+      return await this.prisma.user.create({ data: createUserDto });
     } catch (error) {
       throw new HttpException(
         'Error creating user',
@@ -92,10 +94,13 @@ export class UsersService {
 
   async update(
     id: User['id'],
-    data: Prisma.UserUpdateInput,
+    updateUserDto: UpdateUserDto,
   ): Promise<User | null> {
     try {
-      return await this.prisma.user.update({ where: { id }, data });
+      return await this.prisma.user.update({
+        where: { id },
+        data: updateUserDto,
+      });
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new HttpException(error.message, HttpStatus.NOT_FOUND);
