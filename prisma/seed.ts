@@ -1,12 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { encodePassword } from '../src/utils/bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   const users = await prisma.user.createMany({
     data: [
-      { email: 'bob@example.com', password: 'test', id: '1' },
-      { email: 'carol@example.com', password: 'test', id: '2' },
+      { email: 'bob@example.com', password: encodePassword('test'), id: '1' },
+      { email: 'carol@example.com', password: encodePassword('test'), id: '2' },
     ],
   });
 
