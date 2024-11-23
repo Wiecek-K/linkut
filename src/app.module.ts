@@ -23,6 +23,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController, LinksController],
-  providers: [AppService, PrismaService, LinksService,Logger],
+  providers: [AppService, PrismaService, LinksService, Logger],
 })
 export class AppModule {}
