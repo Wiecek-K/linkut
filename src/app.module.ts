@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -23,6 +23,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController, LinksController],
-  providers: [AppService, PrismaService, LinksService],
+  providers: [AppService, PrismaService, LinksService,Logger],
 })
 export class AppModule {}

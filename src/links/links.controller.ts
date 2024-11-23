@@ -8,12 +8,14 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   ValidationPipe,
 } from '@nestjs/common';
 import { LinksService } from './links.service';
-import { Link, Prisma } from '@prisma/client';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import { Request } from 'express';
+import { JwtUserPayload } from 'src/types/JwtUserPayload';
 
 @Controller('links')
 export class LinksController {
@@ -33,9 +35,13 @@ export class LinksController {
     return link;
   }
 
-  @Post() //POST  /links
-  async createLink(@Body(ValidationPipe) createLinkDto: CreateLinkDto) {
-    return await this.linksService.create(createLinkDto);
+  @Post('/generate') //POST  /links/generate
+  async createLink(
+    @Body(ValidationPipe) createLinkDto: CreateLinkDto,
+    @Req() req: Request,
+  ) {
+    const { sub } = req.user as JwtUserPayload;
+    return await this.linksService.create(createLinkDto, sub);
   }
 
   @Patch(':id') //  PATCH /links/:id
