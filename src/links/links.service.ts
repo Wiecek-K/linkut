@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Link, Prisma } from '@prisma/client';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Link } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import { nanoid } from 'nanoid';
+import { CreateLinkDto } from './dto/create-link.dto';
 
 @Injectable()
 export class LinksService {
@@ -30,19 +35,50 @@ export class LinksService {
     }
   }
 
-  async create(createLinkDto: CreateLinkDto): Promise<Link | null> {
+  async create(
+    createLinkDto: CreateLinkDto,
+    userId: string,
+  ): Promise<Link | null> {
+    const SHORTCODE_LENGTH = 6;
+    const MAX_ATTEMPTS = 5;
+
+    const { originalUrl } = createLinkDto;
+
     try {
       const user = await this.prisma.user.findUnique({
-        where: { id: createLinkDto.userId },
+        where: { id: userId },
       });
-
       if (!user) {
-        throw new NotFoundException(
-          `User with id ${createLinkDto.userId} not found`,
-        );
+        throw new NotFoundException(`User with id ${userId} not found`);
       }
 
-      return await this.prisma.link.create({ data: createLinkDto });
+      let shortUrl: string;
+      let attempts = 0;
+
+      do {
+        shortUrl = nanoid(SHORTCODE_LENGTH);
+
+        const exists = await this.prisma.link.findFirst({
+          where: { shortUrl },
+        });
+
+        if (!exists) {
+          const newLink = await this.prisma.link.create({
+            data: {
+              originalUrl,
+              shortUrl,
+              userId,
+            },
+          });
+
+          return newLink; //TODO:
+        }
+
+        attempts++;
+      } while (attempts < MAX_ATTEMPTS);
+      //
+      throw new ConflictException('Could not generate unique shortcode');
+      //
     } catch (error) {
       throw new Error('Error creating link');
     }
