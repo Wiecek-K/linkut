@@ -25,13 +25,13 @@ async function main() {
     data: [
       {
         originalUrl: 'google.com',
-        shortUrl: 'google.com',
+        shortUrlCode: 'gr',
         userId: '1',
         id: '999',
       },
       {
         originalUrl: 'youtube.com',
-        shortUrl: 'youtube.com',
+        shortUrlCode: 'yt',
         userId: '2',
         id: '998',
       },
