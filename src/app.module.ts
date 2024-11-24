@@ -9,6 +9,7 @@ import { LinksModule } from './links/links.module';
 import { LinksService } from './links/links.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { UrlService } from './url/url.service';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController, LinksController],
-  providers: [AppService, PrismaService, LinksService, Logger],
+  providers: [AppService, PrismaService, LinksService, Logger, UrlService],
 })
 export class AppModule {}

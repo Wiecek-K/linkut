@@ -15,7 +15,7 @@ export class LinksService {
 
   async findOne(id: Link['id']): Promise<Link | null> {
     try {
-      return await this.prisma.link.findFirst({
+      return await this.prisma.link.findUnique({
         where: { id },
       });
     } catch (error) {
@@ -23,6 +23,23 @@ export class LinksService {
         throw new NotFoundException(`Link with ID "${id}" not found.`);
       } else {
         throw new Error(`Error fetching link with ID "${id}"`);
+      }
+    }
+  }
+
+  async findOrginalUrl(shortUrl: Link['shortUrl']): Promise<string | null> {
+    try {
+      const link = await this.prisma.link.findUnique({
+        where: { shortUrl },
+      });
+      return link.originalUrl;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(
+          `Link with shortUrl "${shortUrl}" not found.`,
+        );
+      } else {
+        throw new Error(`Error fetching link with shortUrl "${shortUrl}"`);
       }
     }
   }

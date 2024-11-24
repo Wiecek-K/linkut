@@ -16,10 +16,14 @@ import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { Request } from 'express';
 import { JwtUserPayload } from 'src/types/JwtUserPayload';
+import { UrlService } from 'src/url/url.service';
 
 @Controller('links')
 export class LinksController {
-  constructor(private readonly linksService: LinksService) {}
+  constructor(
+    private readonly linksService: LinksService,
+    private readonly urlService: UrlService,
+  ) {}
 
   @Get() // GET   /links
   async getAllLinks() {
@@ -41,7 +45,11 @@ export class LinksController {
     @Req() req: Request,
   ) {
     const { sub } = req.user as JwtUserPayload;
-    return await this.linksService.create(createLinkDto, sub);
+
+    const shortUrlCode = (await this.linksService.create(createLinkDto, sub))
+      .shortUrl;
+
+    return this.urlService.getFullUrl(`/${shortUrlCode}`);
   }
 
   @Patch(':id') //  PATCH /links/:id
