@@ -8,10 +8,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { nanoid } from 'nanoid';
 import { CreateLinkDto } from './dto/create-link.dto';
+import { UrlService } from 'src/url/url.service';
 
 @Injectable()
 export class LinksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly urlService: UrlService,
+  ) {}
 
   async findOne(id: Link['id']): Promise<Link | null> {
     try {
@@ -27,19 +31,52 @@ export class LinksService {
     }
   }
 
-  async findOrginalUrl(shortUrl: Link['shortUrl']): Promise<string | null> {
+  async findOrginalUrl(
+    shortUrlCode: Link['shortUrlCode'],
+  ): Promise<string | null> {
     try {
       const link = await this.prisma.link.findUnique({
-        where: { shortUrl },
+        where: { shortUrlCode },
       });
       return link.originalUrl;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(
-          `Link with shortUrl "${shortUrl}" not found.`,
+          `Link with shortUrlCode "${shortUrlCode}" not found.`,
         );
       } else {
-        throw new Error(`Error fetching link with shortUrl "${shortUrl}"`);
+        throw new Error(
+          `Error fetching link with shortUrlCode "${shortUrlCode}"`,
+        );
+      }
+    }
+  }
+
+  async findLinksByUser(
+    userId: string,
+  ): Promise<{ shortUrl: string; originalUrl: string }[] | null> {
+    try {
+      const links = await this.prisma.link.findMany({
+        where: { userId },
+      });
+
+      return links.map(({ originalUrl, shortUrlCode }) => {
+        return {
+          shortUrl: this.urlService.getFullUrl(
+            `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
+          ),
+          originalUrl,
+        };
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(
+          `No links were found belonging to the user with ID ${userId}`,
+        );
+      } else {
+        throw new Error(
+          `Error fetching links belonging to the user with ID "${userId}"`,
+        );
       }
     }
   }
@@ -69,26 +106,26 @@ export class LinksService {
         throw new NotFoundException(`User with id ${userId} not found`);
       }
 
-      let shortUrl: string;
+      let shortUrlCode: string;
       let attempts = 0;
 
       do {
-        shortUrl = nanoid(SHORTCODE_LENGTH);
+        shortUrlCode = nanoid(SHORTCODE_LENGTH);
 
         const exists = await this.prisma.link.findFirst({
-          where: { shortUrl },
+          where: { shortUrlCode },
         });
 
         if (!exists) {
           const newLink = await this.prisma.link.create({
             data: {
               originalUrl,
-              shortUrl,
+              shortUrlCode,
               userId,
             },
           });
 
-          return newLink; //TODO:
+          return newLink;
         }
 
         attempts++;

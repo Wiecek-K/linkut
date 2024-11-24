@@ -27,18 +27,24 @@ export class AppController {
   }
 
   @Public()
-  @Get(':shortUrl') //  GET /links/:id
-  async getLinkByShortUrl(
-    @Param('shortUrl') shortUrl: string,
+  @Get(`${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/:shortUrlCode`) 
+  async getLinkByshortUrlCode(
+    @Param('shortUrlCode') shortUrlCode: string,
     @Res() res: Response,
   ) {
-    const originalUrl = await this.linksService.findOrginalUrl(shortUrl);
+    const originalUrl = await this.linksService.findOrginalUrl(shortUrlCode);
 
     if (!originalUrl) {
       throw new HttpException('Nie znaleziono linku', HttpStatus.FORBIDDEN);
     }
 
-    if (originalUrl.includes(this.urlService.getFullUrl(''))) {
+    if (
+      originalUrl.includes(
+        this.urlService.getFullUrl(
+          `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}`,
+        ),
+      )
+    ) {
       throw new HttpException(
         'Niedozwolone przekierowanie',
         HttpStatus.I_AM_A_TEAPOT,
