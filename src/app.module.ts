@@ -1,19 +1,13 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
-import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
-import { LinksController } from './links/links.controller';
 import { LinksModule } from './links/links.module';
 import { LinksService } from './links/links.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
-import { UrlService } from './url/url.service';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TasksService } from './tasks/tasks.service';
-import { TasksModule } from './tasks/tasks.module';
-import { UrlModule } from './url/url.module';
 
 @Module({
   imports: [
@@ -27,10 +21,8 @@ import { UrlModule } from './url/url.module';
       cache: true,
     }),
     ScheduleModule.forRoot(),
-    TasksModule,
-    UrlModule,
   ],
   controllers: [AppController],
-  providers: [AppService, UrlService, LinksService],
+  providers: [AppService, LinksService],
 })
 export class AppModule {}

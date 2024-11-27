@@ -4,20 +4,20 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Req,
   Res,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './auth/auth.decorator';
 import { LinksService } from './links/links.service';
-import { UrlService } from './url/url.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { getFullUrl } from './utils/getFullUrl';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly linksService: LinksService,
-    private readonly urlService: UrlService,
   ) {}
 
   @Public()
@@ -27,11 +27,15 @@ export class AppController {
   }
 
   @Public()
-  @Get(`${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/:shortUrlCode`) 
+  @Get(`${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/:shortUrlCode`)
   async getLinkByshortUrlCode(
+    @Req() req: Request,
     @Param('shortUrlCode') shortUrlCode: string,
     @Res() res: Response,
   ) {
+    const protocol = req.protocol;
+    const host = req.get('host');
+
     const originalUrl = await this.linksService.findOrginalUrl(shortUrlCode);
 
     if (!originalUrl) {
@@ -40,7 +44,9 @@ export class AppController {
 
     if (
       originalUrl.includes(
-        this.urlService.getFullUrl(
+        getFullUrl(
+          protocol,
+          host,
           `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}`,
         ),
       )
