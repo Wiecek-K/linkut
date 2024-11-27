@@ -10,6 +10,10 @@ import { LinksService } from './links/links.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { UrlService } from './url/url.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from './tasks/tasks.service';
+import { TasksModule } from './tasks/tasks.module';
+import { UrlModule } from './url/url.module';
 
 @Module({
   imports: [
@@ -22,8 +26,11 @@ import { UrlService } from './url/url.service';
       envFilePath: '.env',
       cache: true,
     }),
+    ScheduleModule.forRoot(),
+    TasksModule,
+    UrlModule,
   ],
-  controllers: [AppController, LinksController],
-  providers: [AppService, PrismaService, LinksService, Logger, UrlService],
+  controllers: [AppController],
+  providers: [AppService, UrlService, LinksService],
 })
 export class AppModule {}

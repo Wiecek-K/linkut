@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Link } from '@prisma/client';
@@ -9,12 +10,13 @@ import { UpdateLinkDto } from './dto/update-link.dto';
 import { nanoid } from 'nanoid';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { UrlService } from 'src/url/url.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class LinksService {
   constructor(
     private prisma: PrismaService,
-    private readonly urlService: UrlService,
+    // private urlService: UrlService,
   ) {}
 
   async findOne(id: Link['id']): Promise<Link | null> {
@@ -52,34 +54,34 @@ export class LinksService {
     }
   }
 
-  async findLinksByUser(
-    userId: string,
-  ): Promise<{ shortUrl: string; originalUrl: string }[] | null> {
-    try {
-      const links = await this.prisma.link.findMany({
-        where: { userId },
-      });
+  // async findLinksByUser(
+  //   userId: string,
+  // ): Promise<{ shortUrl: string; originalUrl: string }[] | null> {
+  //   try {
+  //     const links = await this.prisma.link.findMany({
+  //       where: { userId },
+  //     });
 
-      return links.map(({ originalUrl, shortUrlCode }) => {
-        return {
-          shortUrl: this.urlService.getFullUrl(
-            `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
-          ),
-          originalUrl,
-        };
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(
-          `No links were found belonging to the user with ID ${userId}`,
-        );
-      } else {
-        throw new Error(
-          `Error fetching links belonging to the user with ID "${userId}"`,
-        );
-      }
-    }
-  }
+  //     return links.map(({ originalUrl, shortUrlCode }) => {
+  //       return {
+  //         shortUrl: this.urlService.getFullUrl(
+  //           `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
+  //         ),
+  //         originalUrl,
+  //       };
+  //     });
+  //   } catch (error) {
+  //     if (error instanceof NotFoundException) {
+  //       throw new NotFoundException(
+  //         `No links were found belonging to the user with ID ${userId}`,
+  //       );
+  //     } else {
+  //       throw new Error(
+  //         `Error fetching links belonging to the user with ID "${userId}"`,
+  //       );
+  //     }
+  //   }
+  // }
 
   async findAll(): Promise<Link[] | null> {
     try {
@@ -165,6 +167,39 @@ export class LinksService {
       } else {
         throw new Error(`Error deleting link with ID "${id}"`);
       }
+    }
+  }
+
+  async deleteExpired() {
+    try {
+      const now = new Date();
+      const hours48Ago = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+      return await this.prisma.link.deleteMany({
+        where: { createdAt: { lt: hours48Ago } },
+      });
+    } catch (error) {
+      throw new Error(`Error deleting links"`);
+    }
+  }
+
+  private readonly logger = new Logger(LinksService.name);
+  log() {
+    this.logger.log('TEST');
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async dupa() {
+    this.logger.debug('Called every 30 second');
+    this.log();
+
+    try {
+      const res = await this.deleteExpired();
+      this.logger.debug(res);
+      // await this.linksService.deleteExpired();
+    } catch (error) {
+      // Add error handling
+      this.logger.error('Cron job failed', error);
     }
   }
 }
