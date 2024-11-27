@@ -8,14 +8,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { nanoid } from 'nanoid';
 import { CreateLinkDto } from './dto/create-link.dto';
-import { UrlService } from 'src/url/url.service';
+import { getFullUrl } from 'src/utils/getFullUrl';
+import { Request } from 'express';
 
 @Injectable()
 export class LinksService {
-  constructor(
-    private prisma: PrismaService,
-    private readonly urlService: UrlService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async findOne(id: Link['id']): Promise<Link | null> {
     try {
@@ -54,15 +52,21 @@ export class LinksService {
 
   async findLinksByUser(
     userId: string,
+    request: Request,
   ): Promise<{ shortUrl: string; originalUrl: string }[] | null> {
     try {
       const links = await this.prisma.link.findMany({
         where: { userId },
       });
 
+      const protocol = request.protocol;
+      const host = request.get('host');
+
       return links.map(({ originalUrl, shortUrlCode }) => {
         return {
-          shortUrl: this.urlService.getFullUrl(
+          shortUrl: getFullUrl(
+            protocol,
+            host,
             `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
           ),
           originalUrl,
@@ -165,6 +169,19 @@ export class LinksService {
       } else {
         throw new Error(`Error deleting link with ID "${id}"`);
       }
+    }
+  }
+
+  async deleteExpired() {
+    try {
+      const now = new Date();
+      const hours48Ago = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+      return await this.prisma.link.deleteMany({
+        where: { createdAt: { lt: hours48Ago } },
+      });
+    } catch (error) {
+      throw new Error(`Error deleting links"`);
     }
   }
 }
