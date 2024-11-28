@@ -16,129 +16,104 @@ export class LinksService {
   constructor(private prisma: PrismaService) {}
 
   async findOne(id: Link['id']): Promise<Link | null> {
-    try {
-      return await this.prisma.link.findUnique({
-        where: { id },
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Link with ID "${id}" not found.`);
-      } else {
-        throw new Error(`Error fetching link with ID "${id}"`);
-      }
+    const link = await this.prisma.link.findUnique({
+      where: { id },
+    });
+
+    if (!link) {
+      throw new NotFoundException(`Link with ID "${id}" not found.`);
     }
+
+    return link;
   }
 
-  async manageShortLinkClick(
+  async menageShortLinkClick(
     shortUrlCode: Link['shortUrlCode'],
     ref = '',
   ): Promise<string | null> {
-    try {
-      const referrer = ref.toLocaleLowerCase();
-      const link = await this.prisma.link.findUnique({
-        where: { shortUrlCode },
-        include: { linkStatistics: true },
-      });
+    const link = await this.prisma.link.findUnique({
+      where: { shortUrlCode },
+      include: { linkStatistics: true },
+    });
 
-      const existingStatistic = link.linkStatistics.find(
-        (stat) => stat.referrer === referrer,
+    if (!link) {
+      throw new NotFoundException(
+        `Link with shortUrlCode "${shortUrlCode}" not found.`,
       );
-
-      if (existingStatistic) {
-        await this.prisma.linkStatistic.update({
-          where: { id: existingStatistic.id },
-          data: {
-            clicks: { increment: 1 },
-          },
-        });
-      } else {
-        await this.prisma.linkStatistic.create({
-          data: {
-            referrer: ref,
-            clicks: 1,
-            link: {
-              connect: { id: link.id },
-            },
-          },
-        });
-      }
-
-      return link.originalUrl;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(
-          `Link with shortUrlCode "${shortUrlCode}" not found.`,
-        );
-      } else {
-        throw new Error(
-          `Error fetching link with shortUrlCode "${shortUrlCode}"`,
-        );
-      }
     }
+
+    const referrer = ref.toLocaleLowerCase();
+    const existingStatistic = link.linkStatistics.find(
+      (stat) => stat.referrer === referrer,
+    );
+
+    if (existingStatistic) {
+      await this.prisma.linkStatistic.update({
+        where: { id: existingStatistic.id },
+        data: {
+          clicks: { increment: 1 },
+        },
+      });
+    } else {
+      await this.prisma.linkStatistic.create({
+        data: {
+          referrer: ref,
+          clicks: 1,
+          link: {
+            connect: { id: link.id },
+          },
+        },
+      });
+    }
+
+    return link.originalUrl;
   }
 
   async findOrginalUrl(
     shortUrlCode: Link['shortUrlCode'],
   ): Promise<string | null> {
-    try {
-      const link = await this.prisma.link.findUnique({
-        where: { shortUrlCode },
-      });
-      return link.originalUrl;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(
-          `Link with shortUrlCode "${shortUrlCode}" not found.`,
-        );
-      } else {
-        throw new Error(
-          `Error fetching link with shortUrlCode "${shortUrlCode}"`,
-        );
-      }
+    const link = await this.prisma.link.findUnique({
+      where: { shortUrlCode },
+    });
+
+    if (!link) {
+      throw new NotFoundException(
+        `Link with shortUrlCode "${shortUrlCode}" not found.`,
+      );
     }
+
+    return link.originalUrl;
   }
 
   async findLinksByUser(
     userId: string,
     request: Request,
   ): Promise<{ shortUrl: string; originalUrl: string }[] | null> {
-    try {
-      const links = await this.prisma.link.findMany({
-        where: { userId },
-      });
+    const links = await this.prisma.link.findMany({
+      where: { userId },
+    });
 
-      const protocol = request.protocol;
-      const host = request.get('host');
-
-      return links.map(({ originalUrl, shortUrlCode }) => {
-        return {
-          shortUrl: getFullUrl(
-            protocol,
-            host,
-            `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
-          ),
-          originalUrl,
-        };
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(
-          `No links were found belonging to the user with ID ${userId}`,
-        );
-      } else {
-        throw new Error(
-          `Error fetching links belonging to the user with ID "${userId}"`,
-        );
-      }
+    if (links.length === 0) {
+      throw new NotFoundException(
+        `No links were found belonging to the user with ID ${userId}`,
+      );
     }
+
+    const protocol = request.protocol;
+    const host = request.get('host');
+
+    return links.map(({ originalUrl, shortUrlCode }) => ({
+      shortUrl: getFullUrl(
+        protocol,
+        host,
+        `${process.env.CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}/${shortUrlCode}`,
+      ),
+      originalUrl,
+    }));
   }
 
   async findAll(): Promise<Link[] | null> {
-    try {
-      return await this.prisma.link.findMany();
-    } catch (error) {
-      throw new Error('Error fetching links');
-    }
+    return this.prisma.link.findMany();
   }
 
   async create(
@@ -150,87 +125,78 @@ export class LinksService {
 
     const { originalUrl } = createLinkDto;
 
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    let shortUrlCode: string;
+    let attempts = 0;
+
+    do {
+      shortUrlCode = nanoid(SHORTCODE_LENGTH);
+
+      const exists = await this.prisma.link.findFirst({
+        where: { shortUrlCode },
       });
-      if (!user) {
-        throw new NotFoundException(`User with id ${userId} not found`);
-      }
 
-      let shortUrlCode: string;
-      let attempts = 0;
-
-      do {
-        shortUrlCode = nanoid(SHORTCODE_LENGTH);
-
-        const exists = await this.prisma.link.findFirst({
-          where: { shortUrlCode },
+      if (!exists) {
+        const newLink = await this.prisma.link.create({
+          data: {
+            originalUrl,
+            shortUrlCode,
+            userId,
+          },
         });
 
-        if (!exists) {
-          const newLink = await this.prisma.link.create({
-            data: {
-              originalUrl,
-              shortUrlCode,
-              userId,
-            },
-          });
+        return newLink;
+      }
 
-          return newLink;
-        }
+      attempts++;
+    } while (attempts < MAX_ATTEMPTS);
 
-        attempts++;
-      } while (attempts < MAX_ATTEMPTS);
-      //
-      throw new ConflictException('Could not generate unique shortcode');
-      //
-    } catch (error) {
-      throw new Error('Error creating link');
-    }
+    throw new ConflictException('Could not generate unique shortcode');
   }
 
   async update(
     id: Link['id'],
     updateLinkDto: UpdateLinkDto,
   ): Promise<Link | null> {
-    try {
-      return await this.prisma.link.update({
-        where: { id },
-        data: updateLinkDto,
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Link with ID "${id}" not found.`);
-      } else {
-        throw new Error(`Error updating link with ID "${id}"`);
-      }
+    const existingLink = await this.prisma.link.findUnique({
+      where: { id },
+    });
+
+    if (!existingLink) {
+      throw new NotFoundException(`Link with ID "${id}" not found.`);
     }
+
+    return this.prisma.link.update({
+      where: { id },
+      data: updateLinkDto,
+    });
   }
 
   async delete(id: Link['id']): Promise<Link | null> {
-    try {
-      return await this.prisma.link.delete({ where: { id } });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Link with ID "${id}" not found.`);
-      } else {
-        throw new Error(`Error deleting link with ID "${id}"`);
-      }
+    const existingLink = await this.prisma.link.findUnique({
+      where: { id },
+    });
+
+    if (!existingLink) {
+      throw new NotFoundException(`Link with ID "${id}" not found.`);
     }
+
+    return this.prisma.link.delete({ where: { id } });
   }
 
   async deleteExpired() {
-    try {
-      const now = new Date();
-      const hours48Ago = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const now = new Date();
+    const hours48Ago = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-      return await this.prisma.link.deleteMany({
-        where: { createdAt: { lt: hours48Ago } },
-      });
-    } catch (error) {
-      throw new Error(`Error deleting links"`);
-    }
+    return this.prisma.link.deleteMany({
+      where: { createdAt: { lt: hours48Ago } },
+    });
   }
 
   async findLinkStatistics(
