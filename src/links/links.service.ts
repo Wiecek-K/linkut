@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Link } from '@prisma/client';
+import { Link, LinkStatistic } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { nanoid } from 'nanoid';
@@ -25,6 +25,54 @@ export class LinksService {
         throw new NotFoundException(`Link with ID "${id}" not found.`);
       } else {
         throw new Error(`Error fetching link with ID "${id}"`);
+      }
+    }
+  }
+
+  async manageShortLinkClick(
+    shortUrlCode: Link['shortUrlCode'],
+    ref = '',
+  ): Promise<string | null> {
+    try {
+      const referrer = ref.toLocaleLowerCase();
+      const link = await this.prisma.link.findUnique({
+        where: { shortUrlCode },
+        include: { linkStatistics: true },
+      });
+
+      const existingStatistic = link.linkStatistics.find(
+        (stat) => stat.referrer === referrer,
+      );
+
+      if (existingStatistic) {
+        await this.prisma.linkStatistic.update({
+          where: { id: existingStatistic.id },
+          data: {
+            clicks: { increment: 1 },
+          },
+        });
+      } else {
+        await this.prisma.linkStatistic.create({
+          data: {
+            referrer: ref,
+            clicks: 1,
+            link: {
+              connect: { id: link.id },
+            },
+          },
+        });
+      }
+
+      return link.originalUrl;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(
+          `Link with shortUrlCode "${shortUrlCode}" not found.`,
+        );
+      } else {
+        throw new Error(
+          `Error fetching link with shortUrlCode "${shortUrlCode}"`,
+        );
       }
     }
   }
@@ -183,5 +231,23 @@ export class LinksService {
     } catch (error) {
       throw new Error(`Error deleting links"`);
     }
+  }
+
+  async findLinkStatistics(
+    shortUrlCode: Link['shortUrlCode'],
+    userId: string,
+  ): Promise<LinkStatistic[] | null> {
+    const link = await this.prisma.link.findFirst({
+      where: { shortUrlCode, userId },
+      include: { linkStatistics: true },
+    });
+
+    if (!link) {
+      throw new NotFoundException(
+        `Link with shortUrlCode "${shortUrlCode}" not found.`,
+      );
+    }
+
+    return link.linkStatistics;
   }
 }

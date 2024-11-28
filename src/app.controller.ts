@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -32,11 +33,15 @@ export class AppController {
     @Req() req: Request,
     @Param('shortUrlCode') shortUrlCode: string,
     @Res() res: Response,
+    @Query('ref') ref?: string,
   ) {
     const protocol = req.protocol;
     const host = req.get('host');
 
-    const originalUrl = await this.linksService.findOrginalUrl(shortUrlCode);
+    const originalUrl = await this.linksService.manageShortLinkClick(
+      shortUrlCode,
+      ref,
+    );
 
     if (!originalUrl) {
       throw new HttpException('Nie znaleziono linku', HttpStatus.FORBIDDEN);
@@ -53,7 +58,7 @@ export class AppController {
     ) {
       throw new HttpException(
         'Niedozwolone przekierowanie',
-        HttpStatus.I_AM_A_TEAPOT,
+        HttpStatus.FORBIDDEN,
       );
     }
 
