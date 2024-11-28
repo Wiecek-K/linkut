@@ -27,7 +27,7 @@ export class LinksService {
     return link;
   }
 
-  async menageShortLinkClick(
+  async manageShortLinkClick(
     shortUrlCode: Link['shortUrlCode'],
     ref = '',
   ): Promise<string | null> {
