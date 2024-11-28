@@ -1,7 +1,6 @@
 import {
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Link, LinkStatistic } from '@prisma/client';
@@ -15,8 +14,6 @@ import { Request } from 'express';
 @Injectable()
 export class LinksService {
   constructor(private prisma: PrismaService) {}
-
-  private readonly logger = new Logger(LinksService.name);
 
   async findOne(id: Link['id']): Promise<Link | null> {
     try {
@@ -32,7 +29,7 @@ export class LinksService {
     }
   }
 
-  async menageShortLinkClick(
+  async manageShortLinkClick(
     shortUrlCode: Link['shortUrlCode'],
     ref = '',
   ): Promise<string | null> {
@@ -244,7 +241,6 @@ export class LinksService {
       where: { shortUrlCode, userId },
       include: { linkStatistics: true },
     });
-    this.logger.log(link);
 
     if (!link) {
       throw new NotFoundException(

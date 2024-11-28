@@ -38,7 +38,7 @@ export class AppController {
     const protocol = req.protocol;
     const host = req.get('host');
 
-    const originalUrl = await this.linksService.menageShortLinkClick(
+    const originalUrl = await this.linksService.manageShortLinkClick(
       shortUrlCode,
       ref,
     );
