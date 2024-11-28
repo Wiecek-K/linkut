@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Param,
   Post,
   Req,
   ValidationPipe,
@@ -29,6 +30,25 @@ export class LinksController {
     }
 
     return links;
+  }
+
+  @Get('stats/:shortUrlCode') //  GET /links/stats/:id
+  async getLinkStats(
+    @Param('shortUrlCode') shortUrlCode: string,
+    @Req() req: Request,
+  ) {
+    const { sub } = req.user as JwtUserPayload;
+
+    const linkStats = await this.linksService.findLinkStatistics(
+      shortUrlCode,
+      sub,
+    );
+
+    if (!linkStats) {
+      throw new HttpException('Nie znaleziono statystyk', HttpStatus.NOT_FOUND);
+    }
+
+    return linkStats;
   }
 
   //TODO: make guard decorator : Only for Admin
