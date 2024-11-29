@@ -8,6 +8,8 @@ import { LinksService } from './links/links.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -15,14 +17,27 @@ import { ScheduleModule } from '@nestjs/schedule';
     PrismaModule,
     LinksModule,
     AuthModule,
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
       cache: true,
     }),
-    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
   ],
   controllers: [AppController],
-  providers: [AppService, LinksService],
+  providers: [
+    AppService,
+    LinksService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
