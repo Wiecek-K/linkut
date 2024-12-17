@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { encodePassword } from '../src/utils/bcrypt';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const prisma = new PrismaClient();
 
