@@ -6,7 +6,7 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-  const SEED_USERS_PASSWORD = process.env.SEED_USERS_PASSWORD;
+  const SEED_USERS_PASSWORD = process.env.SEED_USERS_PASSWORD || '';
 
   const users = await prisma.user.createMany({
     data: [
