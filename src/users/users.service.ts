@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { encodePassword } from 'src/utils/bcrypt';
+import { encodePassword } from 'src/utils/encodePassword';
 
 @Injectable()
 export class UsersService {
@@ -83,7 +83,7 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<User | null> {
-    const password = encodePassword(createUserDto.password);
+    const password = await encodePassword(createUserDto.password);
     try {
       return await this.prisma.user.create({
         data: { ...createUserDto, password },
