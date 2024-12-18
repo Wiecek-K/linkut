@@ -29,7 +29,7 @@ WORKDIR /app
 COPY --from=build /app/package*.json ./
 
 # Install dependencies
-RUN  npm install
+RUN  npm install --omit=dev
 
 # Copy built application and Prisma files from the previous stage
 COPY --from=build /app/dist ./dist
