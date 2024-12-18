@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { encodePassword } from '../src/utils/bcrypt';
+import { encodePassword } from '../src/utils/encodePassword';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,12 +12,12 @@ async function main() {
     data: [
       {
         email: 'bob@example.com',
-        password: encodePassword(SEED_USERS_PASSWORD),
+        password: await encodePassword(SEED_USERS_PASSWORD),
         id: '1',
       },
       {
         email: 'carol@example.com',
-        password: encodePassword(SEED_USERS_PASSWORD),
+        password: await encodePassword(SEED_USERS_PASSWORD),
         id: '2',
       },
     ],

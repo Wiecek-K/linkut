@@ -1,40 +1,64 @@
 services:
-  app:
-    build:
-      context: .
-    container_name: linkut-app
-    env_file: ./.env
-    environment:
-      CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT: ${CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT}
-      SEED_USERS_PASSWORD: ${SEED_USERS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      DATABASE_URL: ${DATABASE_URL}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - 3000:3000
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-  db:
+  # MySQL container definition
+  mysql-db:
+    # Use the official MySQL image version 8.0
     image: mysql:8.0
     container_name: mysql-db
-    env_file: ./.env
     environment:
+      # Set environment variables for MySQL configuration
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
+      # Map port 3306 of the container to the host
       - '3306:3306'
     volumes:
+      # Persist MySQL data between container restarts
       - mysql-data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-p${MYSQL_ROOT_PASSWORD}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
+  # NestJS container definition
+  nestjs-app:
+    # Build the NestJS image using the Dockerfile in the current directory
+    build:
+      context: .
+    container_name: nestjs-app
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CONVERT_SHORT_TO_ORGINAL_URL_ENDPOINT: '/l'
+    ports:
+      # Expose the app on port 3000
+      - '3000:3000'
+      - '5555:5555' # Prisma Studio
+    depends_on:
+      # Ensure MySQL is started before NestJS
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+# Declare volumes to persist MySQL data
+volumes:
+  mysql-data:
+
+# Define a custom network for communication between services
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  mysql-data:

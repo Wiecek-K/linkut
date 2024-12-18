@@ -14,6 +14,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Public } from 'src/auth/auth.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -37,6 +38,7 @@ export class UsersController {
     return user;
   }
 
+  @Public()
   @Post() //POST  /users
   async createUser(@Body(ValidationPipe) createUserDto: CreateUserDto) {
     return await this.usersService.create(createUserDto);
