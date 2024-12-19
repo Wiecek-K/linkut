@@ -56,15 +56,14 @@ You can access the live version of the API at: [http://13.50.5.104:3000](http://
   }
   ```
 
-  ### 2. Login
+### 3. Generate Short URL
 
-- **Endpoint:** `/auth/login`
+- **Endpoint:** `/links/generate`
 - **Method:** `POST`
 - **Request Body:**
   ```json
   {
-    "email": "string",
-    "password": "string"
+    "originalUrl": "string"
   }
   ```
 
