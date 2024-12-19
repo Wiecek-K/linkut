@@ -22,6 +22,52 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+# API Documentation
+
+## Live Version
+
+You can access the live version of the API at: [http://13.50.5.104:3000](http://13.50.5.104:3000)
+
+## Base Endpoints
+
+### 1. Create User
+
+- **Endpoint:** `/users`
+- **Method:** `POST`
+- **Request Body:**
+
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
+### 2. Login
+
+- **Endpoint:** `/auth/login`
+- **Method:** `POST`
+- **Request Body:**
+
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
+  ### 2. Login
+
+- **Endpoint:** `/auth/login`
+- **Method:** `POST`
+- **Request Body:**
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
