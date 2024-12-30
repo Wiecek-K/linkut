@@ -1,7 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsUrl } from 'class-validator';
 import { IsSafeUrl } from 'src/decorators/safe-url.decorator';
 
 export class CreateLinkDto {
+  @ApiProperty({})
   @IsUrl({
     protocols: ['http', 'https'],
     require_protocol: false,
